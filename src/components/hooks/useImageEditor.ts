@@ -183,12 +183,27 @@ export default function useImageEditor(image: Blob, sandbox: Window | null) {
       setRenderedImage(null);
     } else {
       const [tx, ty, tw, th] = trimmed;
-      const copy = new OffscreenCanvas(tw, th);
+      const copy = new OffscreenCanvas(bitmap.width, bitmap.height);
       const copyCtx = copy.getContext("2d");
       if (copyCtx === null) {
         throw new Error("Could not get context");
       }
-      copyCtx.putImageData(offscreenCtx.getImageData(tx, ty, tw, th), 0, 0);
+      copyCtx.fillStyle = "white";
+      copyCtx.fillRect(0, 0, bitmap.width, bitmap.height);
+      var imageData = offscreenCtx.getImageData(tx, ty, tw, th);
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        if (imageData.data[i + 3] !== 0) {
+          imageData.data[i] = 0;
+          imageData.data[i + 1] = 0;
+          imageData.data[i + 2] = 0;
+        } else {
+          imageData.data[i] = 255;
+          imageData.data[i + 1] = 255;
+          imageData.data[i + 2] = 255;
+          imageData.data[i + 3] = 255;
+        }
+      }
+      copyCtx.putImageData(imageData, tx, ty);
       copy.convertToBlob({ type: "image/png" }).then(setRenderedImage);
     }
   }, [bitmap, traced]);
